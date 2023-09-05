@@ -21,7 +21,7 @@ export default function App() {
     <PaperProvider theme={rootTheme}>
       <Provider store={store}>
         <SafeAreaView>
-          <Text>Welcome To Snow Buddies</Text>
+          <Text>Welcome To Snow Buddies App Test</Text>
         </SafeAreaView>
       </Provider>
     </PaperProvider>
