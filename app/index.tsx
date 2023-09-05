@@ -3,8 +3,10 @@ import { useLocalSearchParams } from 'expo-router';
 import { SafeAreaView, StyleSheet, Platform, StatusBar, Text, View } from 'react-native';
 import { Provider } from "react-redux";
 import { PaperProvider } from 'react-native-paper';
-import store from "./store";
-import rootTheme from './rootTheme';
+import store from "../store";
+import rootTheme from '../rootTheme';
+
+// this is a comment - jared
 
 export default function App() {
   return (
