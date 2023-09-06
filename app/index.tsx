@@ -1,12 +1,20 @@
 import React from 'react';
 import { useLocalSearchParams } from 'expo-router';
-import { SafeAreaView, StyleSheet, Platform, StatusBar, Text, View } from 'react-native';
-import { Provider } from "react-redux";
+import {
+  SafeAreaView,
+  StyleSheet,
+  Platform,
+  StatusBar,
+  Text,
+  View,
+} from 'react-native';
+import { Provider } from 'react-redux';
 import { PaperProvider } from 'react-native-paper';
-import store from "../store";
+import store from '../store';
 import rootTheme from '../rootTheme';
 
 // this is a comment - jared
+// test main branch
 
 export default function App() {
   return (
@@ -17,6 +25,5 @@ export default function App() {
         </SafeAreaView>
       </Provider>
     </PaperProvider>
-
   );
 }
