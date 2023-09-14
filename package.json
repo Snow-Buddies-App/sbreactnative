@@ -1,7 +1,7 @@
 {
   "name": "sbreactnative",
   "version": "1.0.0",
-  "main": "app/index.tsx",
+  "main": "index.tsx",
   "scripts": {
     "start": "expo start --tunnel",
     "android": "expo start --android",
