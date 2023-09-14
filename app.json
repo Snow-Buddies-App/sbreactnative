@@ -2,6 +2,7 @@
   "expo": {
     "name": "sbreactnative",
     "slug": "sbreactnative",
+    "scheme": "myapp",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -13,9 +14,17 @@
     },
     "assetBundlePatterns": [
       "**/*"
-    ],
+    ], 
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+          "LSApplicationQueriesSchemes": [
+            "fbapi",
+            "fb-messenger-share-api",
+            "fbauth2",
+            "fbshareextension"
+          ] 
+        }
     },
     "android": {
       "adaptiveIcon": {
