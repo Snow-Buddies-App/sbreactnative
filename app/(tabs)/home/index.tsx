@@ -1,8 +1,11 @@
+import { useRouter, Stack } from 'expo-router';
 import { View, Text } from 'react-native';
 
 const Home = () => {
+  const navigation = useRouter();
   return (
     <View>
+      <Stack.Screen/>
       <Text>This is the home screen</Text>
       <Text>
         Lorem ipsum dolor sit amet consectetur, adipisicing elit. Voluptates

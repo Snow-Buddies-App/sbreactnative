@@ -13,7 +13,7 @@ const HomeLayout = () => {
           fontWeight: 'bold',
         },
       }}
-    ></Stack>
+    >Stuff</Stack>
   );
 };
 
