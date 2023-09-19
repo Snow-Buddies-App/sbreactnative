@@ -1,5 +1,5 @@
-module.exports = function(api) {
-  process.env.EXPO_ROUTER_APP_ROOT = "./";
+module.exports = function (api) {
+  process.env.EXPO_ROUTER_APP_ROOT = './';
   api.cache(true);
   return {
     presets: ['babel-preset-expo'],

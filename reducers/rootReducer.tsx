@@ -1,7 +1,7 @@
-import { combineReducers } from "@reduxjs/toolkit";
-import userReducer from "../features/users/reducers/index";
+import { combineReducers } from '@reduxjs/toolkit';
+import userReducer from '../features/users/reducers/index';
 
-const rootReducer = combineReducers({userReducer});
+const rootReducer = combineReducers({ userReducer });
 
 export type RootState = ReturnType<typeof rootReducer>;
 
