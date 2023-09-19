@@ -1,6 +1,7 @@
 {
   "expo": {
     "name": "sbreactnative",
+    "jsEngine": "hermes",
     "slug": "sbreactnative",
     "scheme": "myapp",
     "version": "1.0.0",
