@@ -1,8 +1,10 @@
 import { Text, View } from 'react-native';
+import { Stack } from 'expo-router';
 
 const Login = () => {
   return (
     <View>
+      <Stack.Screen options={{headerShown: true, title: "Login"}} />
       <Text>This is the Login screen</Text>
       <Text>
         Lorem ipsum dolor sit amet consectetur adipisicing elit. Iste dolore,

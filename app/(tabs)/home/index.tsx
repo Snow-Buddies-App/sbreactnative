@@ -5,7 +5,7 @@ const Home = () => {
   const navigation = useRouter();
   return (
     <View>
-      <Stack.Screen/>
+      <Stack.Screen options={{headerShown: true, title: "Home"}} />
       <Text>This is the home screen</Text>
       <Text>
         Lorem ipsum dolor sit amet consectetur, adipisicing elit. Voluptates
