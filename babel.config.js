@@ -1,4 +1,4 @@
-module.exports = function (api) {
+module.exports = function babel(api) {
   process.env.EXPO_ROUTER_APP_ROOT = './';
   api.cache(true);
   return {

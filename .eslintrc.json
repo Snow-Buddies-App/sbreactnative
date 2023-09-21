@@ -3,11 +3,27 @@
     "node": true,
     "es2021": true
   },
-  "extends": ["plugin:react/recommended", "airbnb", "airbnb/hooks", "prettier"],
+  "extends": [
+    "plugin:react/recommended",
+    "airbnb",
+    "airbnb-typescript",
+    "airbnb/hooks",
+    "prettier"
+  ],
   "parserOptions": {
     "ecmaVersion": "latest",
-    "sourceType": "module"
+    "sourceType": "module",
+    "project": ["./tsconfig.json"]
   },
   "plugins": ["react", "react-native"],
-  "rules": {}
+  "rules": {
+    "react/jsx-filename-extension": [2, { "extensions": [".js", ".jsx", ".ts", ".tsx"] }]
+  },
+  "settings": {
+    "import/resolver": {
+      "node": {
+        "extensions": [".js", ".jsx", ".ts", ".tsx"]
+      }
+    }
+  }
 }
