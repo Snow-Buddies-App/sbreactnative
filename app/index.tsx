@@ -1,30 +1,29 @@
-import { useRouter, Stack } from 'expo-router';
-import { View, Button } from 'react-native';
+import { View, Image } from 'react-native';
+import React from 'react';
+import { Button, Text } from 'react-native-paper';
+import { Link } from 'expo-router';
 
-// replacing WelcomeScreen with this will bypass the Welcome screen and make the /home screen the initial screen on load
-
-/* 
-import { Redirect } from "expo-router";
-
-const Index = () => {
-  return <Redirect href="/home" />;
-};
-export default Index;
-
-*/
-
-const WelcomeScreen = () => {
-  const navigation = useRouter();
+const Onboarding = () => {
   return (
     <View>
-      <Stack.Screen
-        options={{
-          title: 'Welcome',
-        }}
-      />
-      <Button title="Home screen" onPress={() => navigation.push('/home')} />
+      <Image source={require('../assets/sblogo.png')} />
+      <Text>
+        Lorem ipsum dolor sit amet consectetur adipisicing elit. Officiis non
+        accusantium repudiandae, aliquam fuga vitae dolor similique cumque
+        facere aperiam magni doloremque ea fugit delectus? Laborum blanditiis
+        nesciunt nam veniam.
+      </Text>
+      <Link href="/Register/RegisterScreen">
+        <Button mode="contained">Register</Button>
+      </Link>
+      <Text>
+        Already have an account?
+        <Link href="/Login/LoginScreen">
+          <Button>Log in</Button>
+        </Link>
+      </Text>
     </View>
   );
 };
 
-export default WelcomeScreen;
+export default Onboarding;

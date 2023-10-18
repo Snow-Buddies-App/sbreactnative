@@ -8,12 +8,12 @@ import rootTheme from './rootTheme';
 
 export default function App() {
   return (
-    <PaperProvider theme={rootTheme}>
-      <Provider store={store}>
+    <Provider store={store}>
+      <PaperProvider theme={rootTheme}>
         <SafeAreaView>
           <Text>Welcome To Snow Buddies</Text>
         </SafeAreaView>
-      </Provider>
-    </PaperProvider>
+      </PaperProvider>
+    </Provider>
   );
 }
