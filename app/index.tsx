@@ -11,7 +11,7 @@ import { Link } from 'expo-router';
 */
 
 const Onboarding = () => {
-  const image = require('../assets/OnboardingBack.png');
+const image = require('../assets/OnboardingBack.png');
 
   return (
     <View style={styles.container}>
