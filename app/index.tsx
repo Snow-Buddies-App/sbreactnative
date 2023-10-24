@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Image, StyleSheet } from 'react-native';
-import { ImageBackground, TextInput } from 'react-native';
+import { ImageBackground } from 'react-native';
 import { Button, Text } from 'react-native-paper';
 import { Link } from 'expo-router';
 
@@ -11,7 +11,7 @@ import { Link } from 'expo-router';
 */
 
 const Onboarding = () => {
-const image = require('../assets/OnboardingBack.png');
+  const image = require('../assets/OnboardingBack.png');
 
   return (
     <View style={styles.container}>
