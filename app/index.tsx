@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Image, StyleSheet } from 'react-native';
-import { ImageBackground } from 'react-native';
-import { Button, Text } from 'react-native-paper';
+import { View, Image, StyleSheet, ImageBackground } from 'react-native';
+import { Button, Card, Text } from 'react-native-paper';
 import { Link } from 'expo-router';
+
+import CardComponent from '../features/Register/cardComponent';
 
 /*TODO: 
   MAKE BUTTONS REUSABLE COMPONENTS  
@@ -20,7 +21,7 @@ const Onboarding = () => {
           <Image source={require('../assets/sblogo-sm.png')} />
         </View>
         <View style={styles.bottomContainer}>
-          {/* CARD COMPONENT HERE */}
+          <CardComponent />
           <Link href="/Register/RegisterScreen">
             <Button style={styles.button} mode="contained">
               Register
@@ -58,17 +59,10 @@ const styles = StyleSheet.create({
     marginBottom: 30,
     paddingHorizontal: 30,
   },
-  textInput: {
-    width: 300,
-    height: 145,
-    marginBottom: 10,
-    backgroundColor: '#90BDE1',
-    opacity: 0.6,
-  },
   button: {
     backgroundColor: '#04448C',
-    borderRadius: 8,
-    width: 300,
+    borderRadius: 5,
+    width: 315,
   },
   loginText: {
     fontSize: 16,
