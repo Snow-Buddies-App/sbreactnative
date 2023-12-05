@@ -1,11 +1,15 @@
 import { View, StyleSheet, Text, ScrollView, Dimensions } from 'react-native';
 
+interface CardItem {
+  title: string;
+}
+
 const CardComponent = () => {
   const CARD_SPACING = 15;
   const CARD_WIDTH = 315;
   const ITEM_WIDTH = CARD_WIDTH + CARD_SPACING;
 
-  const card = [
+  const card: CardItem[] = [
     {
       title: 'This is the first card, scroll to view the next card',
     },
@@ -25,7 +29,7 @@ const CardComponent = () => {
       bounces={false}
       showsHorizontalScrollIndicator={false}
     >
-      {card.map((item, i) => {
+      {card.map((item: CardItem, i) => {
         return (
           <View key={i} style={{ width: ITEM_WIDTH }}>
             <View style={styles.cardBox}>
@@ -33,7 +37,7 @@ const CardComponent = () => {
                 <Text style={styles.cardText}>{item.title}</Text>
                 <View style={styles.rectangleFlex}>
                   {/*Applying green color to the rectangle at the same index of the current card */}
-                  {card.map((item, j) => {
+                  {card.map((item: CardItem, j) => {
                     return (
                       <View
                         key={j}
