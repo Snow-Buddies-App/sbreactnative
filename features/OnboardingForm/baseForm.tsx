@@ -1,5 +1,17 @@
 import { Text, View, TextInput, Button, Alert } from "react-native";
 import { useForm, Controller } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as yup from "yup";
+
+const schema = yup.object({
+    firstName: yup.string().required(),
+    lastName: yup.string().required(),
+}).required();
+
+type FormData = {
+    firstName: string
+    lastName: string
+}
 
 export default function BaseForm() {
     const { control, handleSubmit, formState: { errors }, } = useForm(
@@ -7,11 +19,11 @@ export default function BaseForm() {
             defaultValues: {
                 firstName: "",
                 lastName: "",
-                email: ""
-            }
+            },
+            resolver: yupResolver(schema),
         }
     );
-    const onSubmit = (data) => console.log(data);
+    const onSubmit = (data:FormData) => console.log(data);
 
     return (
         <View>
@@ -22,7 +34,7 @@ export default function BaseForm() {
                 }}
                 render={({ field: { onChange, onBlur, value } }) => (
                     <TextInput
-                        placeHolder="First Name"
+                        placeholder="First Name"
                         onBlur={onBlur}
                         onChangeText={onChange}
                         value={value}
@@ -30,8 +42,22 @@ export default function BaseForm() {
                 )}
                 name="firstName"
             />
-
-            
+            <Controller
+                control={control}
+                rules={{
+                    required: true,
+                }}
+                render={({ field: { onChange, onBlur, value } }) => (
+                    <TextInput
+                        placeholder="Last Name"
+                        onBlur={onBlur}
+                        onChangeText={onChange}
+                        value={value}
+                    />  
+                )}
+                name="lastName"
+            />
+            <Button title="Submit" onPress={handleSubmit(onSubmit)} />
         </View>
     )
 }
