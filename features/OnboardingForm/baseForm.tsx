@@ -1,6 +1,8 @@
-import { Text, View, TextInput, Button, Alert } from "react-native";
-import { useForm, Controller } from "react-hook-form";
+import { useState } from "react";
+import { Text, View, Button, Alert } from "react-native";
+import { useForm, FormProvider, SubmitHandler, SubmitErrorHandler, FieldValues } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
+import {TextInput} from "./baseComponents/baseTextInput";
 import * as yup from "yup";
 
 const schema = yup.object({
@@ -8,56 +10,46 @@ const schema = yup.object({
     lastName: yup.string().required(),
 }).required();
 
-type FormData = {
-    firstName: string
-    lastName: string
+type FormValues = {
+    firstName: string;
+    lastName: string;
 }
 
 export default function BaseForm() {
-    const { control, handleSubmit, formState: { errors }, } = useForm(
+
+    const {...methods} = useForm(
         {
+            resolver: yupResolver(schema),
             defaultValues: {
                 firstName: "",
                 lastName: "",
-            },
-            resolver: yupResolver(schema),
+            }
         }
     );
-    const onSubmit = (data:FormData) => console.log(data);
+
+    const onSubmit: SubmitHandler<FieldValues> = (data) => console.log(data);
+
+    const [formError, setError] = useState<Boolean>(false);
+
+    const onError: SubmitErrorHandler<FormValues> = (errors, e) => console.log(errors);
 
     return (
         <View>
-            <Controller
-                control={control}
-                rules={{
-                    required: true,
-                }}
-                render={({ field: { onChange, onBlur, value } }) => (
-                    <TextInput
-                        placeholder="First Name"
-                        onBlur={onBlur}
-                        onChangeText={onChange}
-                        value={value}
-                    />  
-                )}
-                name="firstName"
-            />
-            <Controller
-                control={control}
-                rules={{
-                    required: true,
-                }}
-                render={({ field: { onChange, onBlur, value } }) => (
-                    <TextInput
-                        placeholder="Last Name"
-                        onBlur={onBlur}
-                        onChangeText={onChange}
-                        value={value}
-                    />  
-                )}
-                name="lastName"
-            />
-            <Button title="Submit" onPress={handleSubmit(onSubmit)} />
+            <FormProvider {...methods}>
+                <TextInput
+                    name="firstName"
+                    label="First Name"
+                    defaultValue=""
+                    rules={{ required: true }}
+                />
+                <TextInput
+                    name="lastName"
+                    label="Last Name"
+                    defaultValue=""
+                    rules={{ required: true }}
+                />
+            </FormProvider>
+            <Button title="Submit" onPress={methods.handleSubmit(onSubmit, onError)} />
         </View>
     )
 }
