@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Text, View, Button, Alert } from "react-native";
 import { useForm, FormProvider, SubmitHandler, SubmitErrorHandler, FieldValues } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
-import {TextInput} from "./baseComponents/baseTextInput";
+import {TextInput} from "./baseComponents/textInput";
 import * as yup from "yup";
 
 const schema = yup.object({
