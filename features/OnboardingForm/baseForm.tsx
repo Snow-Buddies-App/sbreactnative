@@ -21,8 +21,8 @@ export default function BaseForm() {
         {
             resolver: yupResolver(schema),
             defaultValues: {
-                firstName: "",
-                lastName: "",
+                firstName: "First Name",
+                lastName: "Last Name",
             }
         }
     );
@@ -33,6 +33,30 @@ export default function BaseForm() {
 
     const onError: SubmitErrorHandler<FormValues> = (errors, e) => console.log(errors);
 
+    const firstNameRules = { 
+        required: 'First name is required!',
+        minLength: {
+            value: 2, 
+            message: 'First name too short!'
+        },
+        maxLength: {
+            value: 20, 
+            message: 'First name too long!'
+        }
+    };
+
+    const lastNameRules = { 
+        required: 'Last name is required!', 
+        minLength: {
+            value: 2, 
+            message: 'Last name too short!'
+        }, 
+        maxLength: {
+            value: 20, 
+            message: 'Last name too long!'
+        }
+    };
+
     return (
         <View>
             <FormProvider {...methods}>
@@ -40,13 +64,13 @@ export default function BaseForm() {
                     name="firstName"
                     label="First Name"
                     defaultValue=""
-                    rules={{ required: true }}
+                    rules={firstNameRules}
                 />
                 <TextInput
                     name="lastName"
                     label="Last Name"
                     defaultValue=""
-                    rules={{ required: true }}
+                    rules={lastNameRules}
                 />
             </FormProvider>
             <Button title="Submit" onPress={methods.handleSubmit(onSubmit, onError)} />

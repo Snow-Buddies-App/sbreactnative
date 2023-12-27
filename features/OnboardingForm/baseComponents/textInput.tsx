@@ -1,13 +1,14 @@
 import React from 'react';
 import {View, TextInput as RNTextInput, TextInputProps as RNTextInputProps, Text, StyleSheet } from 'react-native';
-
 import { useController, useFormContext, ControllerProps, UseControllerProps } from 'react-hook-form';
 
+// Custom data type containing props for text input.
 interface TextInputProps extends RNTextInputProps, UseControllerProps {
     label: string
     defaultValue?: string
 }
 
+// Custom text input component.
 const ControlledInput = (props: TextInputProps) => {
 
     const formContext = useFormContext();
@@ -37,6 +38,7 @@ const ControlledInput = (props: TextInputProps) => {
     )
 }
 
+// Export text input component with contextual logic.
 export const TextInput = (props: TextInputProps) => {
 
     const { name } = props;
