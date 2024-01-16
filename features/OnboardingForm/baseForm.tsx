@@ -17,19 +17,9 @@ type FormValues = {
 
 export default function BaseForm() {
 
-    const {...methods} = useForm(
-        {
-            resolver: yupResolver(schema),
-            defaultValues: {
-                firstName: "First Name",
-                lastName: "Last Name",
-            }
-        }
-    );
+    const methods = useForm();
 
     const onSubmit: SubmitHandler<FieldValues> = (data) => console.log(data);
-
-    const [formError, setError] = useState<Boolean>(false);
 
     const onError: SubmitErrorHandler<FormValues> = (errors, e) => console.log(errors);
 
@@ -66,6 +56,7 @@ export default function BaseForm() {
                     defaultValue=""
                     rules={firstNameRules}
                 />
+                {errors.FirstName && <Text>Required!</Text>}
                 <TextInput
                     name="lastName"
                     label="Last Name"
