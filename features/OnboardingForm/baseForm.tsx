@@ -18,6 +18,11 @@ type FormValues = {
 export default function BaseForm() {
 
     const methods = useForm();
+    methods.register('firstName');
+    methods.register('lastName');
+
+    const firstNameState = methods.getFieldState('firstName');
+    const lastNameState = methods.getFieldState('lastName');
 
     const onSubmit: SubmitHandler<FieldValues> = (data) => console.log(data);
 
@@ -56,13 +61,14 @@ export default function BaseForm() {
                     defaultValue=""
                     rules={firstNameRules}
                 />
-                {errors.FirstName && <Text>Required!</Text>}
+                {!!firstNameState.error && <Text>{firstNameState.error.message}</Text>}
                 <TextInput
                     name="lastName"
                     label="Last Name"
                     defaultValue=""
                     rules={lastNameRules}
                 />
+                {!!lastNameState.error && <Text>{lastNameState.error.message}</Text>}
             </FormProvider>
             <Button title="Submit" onPress={methods.handleSubmit(onSubmit, onError)} />
         </View>

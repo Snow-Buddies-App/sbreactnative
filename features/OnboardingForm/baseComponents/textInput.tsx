@@ -22,7 +22,7 @@ const ControlledInput = (props: TextInputProps) => {
         ...inputProps
     } = props;
 
-    const { field } = useController({ name, rules, defaultValue });
+    const { field, fieldState } = useController({ name, rules, defaultValue });
 
     return (
         <View style={styles.container}>
