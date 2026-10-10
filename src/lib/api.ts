@@ -155,7 +155,8 @@ export async function markConversationRead(otherId: string): Promise<void> {
 /** Live inserts of messages sent to me. RLS filters what each client receives. */
 export function subscribeToIncomingMessages(myId: string, onMessage: (message: Message) => void): RealtimeChannel {
   return supabase
-    .channel(`messages:${myId}`)
+    // Unique per subscriber: several screens may listen at once.
+    .channel(`messages:${myId}:${Math.random().toString(36).slice(2)}`)
     .on(
       'postgres_changes',
       { event: 'INSERT', schema: 'public', table: 'messages', filter: `recipient_id=eq.${myId}` },

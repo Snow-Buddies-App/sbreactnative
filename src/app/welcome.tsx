@@ -11,6 +11,7 @@ export default function Welcome() {
     <ImageBackground
       source={require('@/assets/OnboardingBack.png')}
       style={styles.imageBackground}
+      imageStyle={styles.image}
       resizeMode="cover"
     >
       <SafeAreaView style={styles.safeArea}>
@@ -40,6 +41,7 @@ export default function Welcome() {
 
 const styles = StyleSheet.create({
   imageBackground: { flex: 1 },
+  image: { width: '100%', height: '100%' },
   safeArea: { flex: 1, justifyContent: 'space-between' },
   topContainer: { alignItems: 'center', marginTop: 30 },
   bottomContainer: { alignItems: 'center', marginBottom: 30, paddingHorizontal: 30 },

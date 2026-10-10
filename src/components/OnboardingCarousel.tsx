@@ -25,6 +25,7 @@ const OnboardingCarousel = () => {
   return (
     <View style={styles.wrapper}>
       <ScrollView
+        style={styles.scroller}
         horizontal
         snapToInterval={ITEM_WIDTH}
         decelerationRate="fast"
@@ -57,6 +58,7 @@ export default OnboardingCarousel;
 
 const styles = StyleSheet.create({
   wrapper: { width: ITEM_WIDTH, alignItems: 'center', marginBottom: 15 },
+  scroller: { width: ITEM_WIDTH, flexGrow: 0 },
   cardBox: {
     height: 120,
     backgroundColor: 'rgba(144, 189, 225, .6)',
