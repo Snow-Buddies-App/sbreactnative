@@ -1,12 +1,11 @@
 import React from 'react';
 import { View } from 'react-native';
 import { Text } from 'react-native-paper';
+import BaseForm from '../../../features/OnboardingForm/baseForm';
 
 function RegisterScreen() {
   return (
-    <View>
-      <Text>RegisterScreen This is the register screen</Text>
-    </View>
+    <BaseForm/>
   );
 }
 
