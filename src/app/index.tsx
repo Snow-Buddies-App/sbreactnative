@@ -1,74 +1,50 @@
-import React from 'react';
-import { View, Image, StyleSheet, ImageBackground } from 'react-native';
-import { Button, Text } from 'react-native-paper';
 import { Link } from 'expo-router';
-import CardComponent from '../features/Register/cardComponent';
+import { Image, ImageBackground, StyleSheet, View } from 'react-native';
+import { Button, Text } from 'react-native-paper';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-const Onboarding = () => {
-  const image = require('../assets/OnboardingBack.png');
+import OnboardingCarousel from '@/components/OnboardingCarousel';
+import { brand } from '@/theme';
 
+export default function Welcome() {
   return (
-    <View style={styles.container}>
-      <ImageBackground source={image} style={styles.imageBackground}>
+    <ImageBackground
+      source={require('@/assets/OnboardingBack.png')}
+      style={styles.imageBackground}
+      resizeMode="cover"
+    >
+      <SafeAreaView style={styles.safeArea}>
         <View style={styles.topContainer}>
-          <Image source={require('../assets/sblogo-sm.png')} />
+          <Image source={require('@/assets/sblogo-sm.png')} accessibilityLabel="Snow Buddies" />
         </View>
         <View style={styles.bottomContainer}>
-          <CardComponent />
-          <Link href="/Register/RegisterScreen">
+          <OnboardingCarousel />
+          <Link href="/register" asChild>
             <Button style={styles.button} mode="contained">
               Register
             </Button>
           </Link>
-          <Text style={styles.loginText}>
-            Already have an account?
-            <Link href="/Login/LoginScreen">
-              <Text style={styles.loginLink}> Log in</Text>
+          <View style={styles.loginRow}>
+            <Text style={styles.loginText}>Already have an account?</Text>
+            <Link href="/login" asChild>
+              <Button compact textColor={brand.navy} labelStyle={styles.loginLink}>
+                Log in
+              </Button>
             </Link>
-          </Text>
+          </View>
         </View>
-      </ImageBackground>
-    </View>
+      </SafeAreaView>
+    </ImageBackground>
   );
-};
-
-export default Onboarding;
+}
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  imageBackground: {
-    flex: 1,
-    resizeMode: 'cover',
-    justifyContent: 'space-between',
-  },
-  topContainer: {
-    alignItems: 'center',
-    marginTop: 30,
-  },
-  bottomContainer: {
-    alignItems: 'center',
-    marginBottom: 30,
-    paddingHorizontal: 30,
-  },
-  button: {
-    backgroundColor: '#04448C',
-    borderRadius: 5,
-    width: 315,
-  },
-  loginText: {
-    fontSize: 16,
-    marginTop: 10,
-    color: '#04448C',
-    textShadowColor: 'rgba(0, 0, 0, .25)',
-    textShadowOffset: { width: 0, height: 4 },
-    textShadowRadius: 10,
-  },
-  loginLink: {
-    color: '#04448C',
-    textDecorationLine: 'underline',
-    fontWeight: 'bold',
-    marginLeft: 10,
-  },
+  imageBackground: { flex: 1 },
+  safeArea: { flex: 1, justifyContent: 'space-between' },
+  topContainer: { alignItems: 'center', marginTop: 30 },
+  bottomContainer: { alignItems: 'center', marginBottom: 30, paddingHorizontal: 30 },
+  button: { backgroundColor: brand.navy, borderRadius: 5, width: 315 },
+  loginRow: { flexDirection: 'row', alignItems: 'center', marginTop: 6 },
+  loginText: { fontSize: 16, color: brand.navy },
+  loginLink: { fontWeight: 'bold', textDecorationLine: 'underline', fontSize: 16 },
 });

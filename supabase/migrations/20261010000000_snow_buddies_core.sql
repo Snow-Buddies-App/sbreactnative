@@ -73,6 +73,9 @@ as $$
 declare
   name text := left(trim(coalesce(
     nullif(trim(new.raw_user_meta_data ->> 'display_name'), ''),
+    -- Google / Facebook sign-in
+    nullif(trim(new.raw_user_meta_data ->> 'full_name'), ''),
+    nullif(trim(new.raw_user_meta_data ->> 'name'), ''),
     split_part(coalesce(new.email, ''), '@', 1)
   )), 40);
 begin

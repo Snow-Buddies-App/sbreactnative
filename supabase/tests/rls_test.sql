@@ -27,11 +27,13 @@ grant execute on function pg_temp.assert(boolean, text) to authenticated, anon;
 insert into auth.users (id, email, raw_user_meta_data) values
   ('00000000-0000-0000-0000-00000000000a', 'ava@example.com', '{"display_name":"Ava"}'),
   ('00000000-0000-0000-0000-00000000000b', 'ben@example.com', '{}'),
-  ('00000000-0000-0000-0000-00000000000c', 'c@example.com', '{}');
+  ('00000000-0000-0000-0000-00000000000c', 'c@example.com', '{}'),
+  ('00000000-0000-0000-0000-00000000000d', 'dee@example.com', '{"full_name":"Dee Google"}');
 
 select pg_temp.assert((select display_name from profiles where id = '00000000-0000-0000-0000-00000000000a') = 'Ava', 'display name from metadata');
 select pg_temp.assert((select display_name from profiles where id = '00000000-0000-0000-0000-00000000000b') = 'ben', 'display name from email');
 select pg_temp.assert((select display_name from profiles where id = '00000000-0000-0000-0000-00000000000c') = 'Rider', 'short name falls back');
+select pg_temp.assert((select display_name from profiles where id = '00000000-0000-0000-0000-00000000000d') = 'Dee Google', 'name from OAuth metadata');
 
 -- Anonymous (signed-out) callers see nothing.
 set role anon;
