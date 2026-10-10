@@ -34,6 +34,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const userId = session?.user.id ?? null;
   const loading = !sessionReady || (userId !== null && profileLoadedFor !== userId);
+  // Never expose a previous user's profile after signing out or switching accounts.
+  const currentProfile = userId && profile?.id === userId ? profile : null;
 
   const loadProfile = useCallback(async (id: string) => {
     const { data, error } = await supabase.from('profiles').select('*').eq('id', id).maybeSingle();
@@ -68,19 +70,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [url]);
 
   useEffect(() => {
-    if (!userId) {
-      setProfile(null);
-      setProfileLoadedFor(null);
-      return;
-    }
+    if (!userId) return;
     let active = true;
-    loadProfile(userId)
-      .catch((error) => console.warn('Failed to load profile', error))
-      .finally(() => active && setProfileLoadedFor(userId));
+    supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (error) throw error;
+        if (active) setProfile(data);
+      })
+      .then(undefined, (error: unknown) => console.warn('Failed to load profile', error))
+      .then(() => active && setProfileLoadedFor(userId));
     return () => {
       active = false;
     };
-  }, [userId, loadProfile]);
+  }, [userId]);
 
   const refreshProfile = useCallback(async () => {
     if (userId) await loadProfile(userId);
@@ -110,7 +116,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value = useMemo(
     () => ({
       session,
-      profile,
+      profile: currentProfile,
       loading,
       passwordRecovery,
       finishPasswordRecovery,
@@ -120,7 +126,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }),
     [
       session,
-      profile,
+      currentProfile,
       loading,
       passwordRecovery,
       finishPasswordRecovery,
