@@ -6,12 +6,17 @@ import { ErrorView } from '@/components/StateViews';
 import { useAuth } from '@/providers/AuthProvider';
 
 export function ConfigMissingScreen() {
+  // Riders only ever see a generic message; the setup hint is for developers.
+  if (__DEV__) {
+    console.warn(
+      'Backend not configured: add EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY to .env.local and restart Expo.',
+    );
+  }
   return (
     <SafeAreaView style={styles.container}>
-      <Text variant="headlineSmall">Supabase is not configured</Text>
+      <Text variant="headlineSmall">Snow Buddies can&apos;t connect right now</Text>
       <Text variant="bodyMedium" style={styles.body}>
-        Copy .env.example to .env.local, add EXPO_PUBLIC_SUPABASE_URL and
-        EXPO_PUBLIC_SUPABASE_ANON_KEY from your Supabase project, then restart Expo.
+        Please try again in a little while.
       </Text>
     </SafeAreaView>
   );
