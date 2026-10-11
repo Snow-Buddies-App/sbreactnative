@@ -16,7 +16,9 @@ Built with **Expo SDK 57** (React Native 0.86, Expo Router), **React Native Pape
 | Profile | Display name, ski / snowboard / both, skill level, home mountain, short bio. |
 | Discover | Browse riders, filter by home mountain, sport and level, search by name. |
 | Buddies | Send, accept, decline and cancel buddy requests; remove buddies. |
-| Chat | Realtime 1:1 messages between buddies with unread counts. |
+| Chat | Realtime 1:1 messages between buddies with unread counts, **voice messages**, and pin/meetup cards. |
+| Calls | **Voice and video calls** between buddies (LiveKit), with an incoming-call screen, mute, camera on/off and flip, and calls logged in the chat. |
+| Pins & meetups | Drop a **pin** (powder stash, lost glove) or set a **meetup point** with a time, pick which buddies get it, and optionally post it to their chats. Long-press the map or tap the pin button. Pins expire automatically. |
 | Trips | Plan a ride day at a mountain with a rider cap and optional minimum level; join or leave. |
 | Ski map | Embedded map (native maps on iOS and Android, Leaflet on web) with runs coloured by difficulty and lifts for any resort worldwide, your live GPS position, and distance to the resort. |
 | Friends on the map | Share your live location for 1, 4 or 8 hours and choose exactly which buddies can see you. Buddies sharing with you appear on the map in real time. Tap one to message them. |
@@ -38,6 +40,7 @@ src/
   providers/           AuthProvider (session + profile)
 supabase/
   migrations/          database schema + RLS policies
+  functions/           edge functions (livekit-token for calls)
   seed.sql             42 North American resorts
   tests/               RLS/behaviour tests runnable on plain Postgres
 ```
@@ -65,7 +68,29 @@ cp .env.example .env.local
    - `sb://**` (installed app / development builds)
    - `exp://**` (Expo Go during development)
 
-### 3. Social login (optional)
+### 3. Voice and video calls (LiveKit)
+
+Calls use [LiveKit](https://livekit.io) for audio and video. The free LiveKit Cloud tier is
+enough to start, or you can self-host.
+
+1. Create a project at [cloud.livekit.io](https://cloud.livekit.io) and copy its **URL**
+   (`wss://…livekit.cloud`), **API key** and **API secret**.
+2. Deploy the token function and store the LiveKit keys as Supabase secrets:
+   ```bash
+   npx supabase functions deploy livekit-token
+   npx supabase secrets set LIVEKIT_URL=wss://your-project.livekit.cloud \
+     LIVEKIT_API_KEY=your-key LIVEKIT_API_SECRET=your-secret
+   ```
+   The function only issues a token to the caller or callee of a live call, and the
+   LiveKit secret never ships in the app.
+3. Calls need the native WebRTC module, so they work in a **development build** or the
+   store app, not in Expo Go or on web (those show a friendly "not available in this
+   preview" screen):
+   ```bash
+   npx eas-cli build --profile development --platform ios   # or android
+   ```
+
+### 4. Social login (optional)
 
 Enable each provider in **Supabase → Authentication → Providers**. Both use the callback
 URL Supabase shows on that page (`https://<ref>.supabase.co/auth/v1/callback`).
@@ -80,7 +105,7 @@ URL Supabase shows on that page (`https://<ref>.supabase.co/auth/v1/callback`).
   Display API (consumer "Log in with Instagram") in December 2024. Instagram users sign in
   with **Continue with Facebook**, since Instagram accounts are Meta accounts.
 
-### 4. Run
+### 5. Run
 
 ```bash
 npm start          # then press i (iOS), a (Android) or w (web)
@@ -121,6 +146,14 @@ Every table has row level security, and the app only ever uses the anon key.
   and it is deleted when sharing stops. Positions can only be written through
   `update_my_location()`, which refuses to store anything while sharing is off. Unfriending
   removes location access in both directions.
+- Pins are visible only to their owner and the buddies they picked, and disappear after
+  they expire. Pins and their chat cards are created by `drop_pin()`, so clients can't
+  forge pin or call messages.
+- Voice notes live in a private storage bucket under the sender's folder. Only the sender
+  and the message's recipient can play them, via short-lived signed URLs.
+- Calls change state only through `start_call` / `answer_call` / `decline_call` /
+  `end_call`, and only between buddies. Room tokens come from the `livekit-token`
+  edge function, which checks the call in the database first.
 - Trip capacity and dates are enforced in the database. The trip row is locked while
   someone joins, so the trip can't be overbooked.
 
@@ -134,5 +167,5 @@ DATABASE_URL=postgres://postgres:postgres@localhost:5432/postgres npm run test:d
 ```
 
 `test:db` applies the migrations to a temporary Postgres database, using a small
-Supabase auth stub, and runs every `supabase/tests/*_test.sql` (RLS and location privacy). CI (`.github/workflows/ci.yml`)
+Supabase auth stub, and runs every `supabase/tests/*_test.sql` (RLS, location privacy, pins, voice notes and calls). CI (`.github/workflows/ci.yml`)
 runs all of these checks on every pull request.

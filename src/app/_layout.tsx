@@ -8,6 +8,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ConfigMissingScreen, ProfileErrorScreen } from '@/components/AppStatusScreens';
 import { isSupabaseConfigured } from '@/lib/supabase';
 import { AuthProvider, useAuth } from '@/providers/AuthProvider';
+import { CallProvider } from '@/providers/CallProvider';
 // Also registers the background location task at startup.
 import { LocationSharingProvider } from '@/providers/LocationSharingProvider';
 import theme from '@/theme';
@@ -74,10 +75,17 @@ function RootNavigator() {
         <Stack.Screen name="trip/[id]" options={{ title: 'Trip' }} />
         <Stack.Screen name="trip/new" options={{ title: 'Plan a trip', presentation: 'modal' }} />
         <Stack.Screen name="resort/[id]" options={{ title: 'Ski map' }} />
+        <Stack.Screen name="pin/[id]" options={{ title: 'Pin' }} />
+        <Stack.Screen name="call/[id]" options={{ headerShown: false, presentation: 'fullScreenModal' }} />
         <Stack.Screen name="edit-profile" options={{ title: 'Edit profile', presentation: 'modal' }} />
       </Stack.Protected>
     </Stack>
   );
 
-  return session ? <LocationSharingProvider userId={session.user.id}>{stack}</LocationSharingProvider> : stack;
+  if (!session) return stack;
+  return (
+    <LocationSharingProvider userId={session.user.id}>
+      {onboarded ? <CallProvider userId={session.user.id}>{stack}</CallProvider> : stack}
+    </LocationSharingProvider>
+  );
 }

@@ -4,6 +4,10 @@
 export type Sport = 'ski' | 'snowboard' | 'both';
 export type SkillLevel = 'beginner' | 'intermediate' | 'advanced' | 'expert';
 export type BuddyStatus = 'pending' | 'accepted';
+export type MessageKind = 'text' | 'voice' | 'pin' | 'call';
+export type PinKind = 'meetup' | 'pin';
+export type CallKind = 'voice' | 'video';
+export type CallStatus = 'ringing' | 'active' | 'declined' | 'missed' | 'ended';
 
 export type Database = {
   __InternalSupabase: {
@@ -118,11 +122,19 @@ export type Database = {
           body: string;
           created_at: string;
           read_at: string | null;
+          kind: MessageKind;
+          attachment_path: string | null;
+          duration_ms: number | null;
+          pin_id: number | null;
+          call_id: string | null;
         };
         Insert: {
           sender_id?: string;
           recipient_id: string;
           body: string;
+          kind?: 'text' | 'voice';
+          attachment_path?: string | null;
+          duration_ms?: number | null;
         };
         Update: {
           read_at?: string | null;
@@ -140,6 +152,20 @@ export type Database = {
             columns: ['recipient_id'];
             isOneToOne: false;
             referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'messages_pin_id_fkey';
+            columns: ['pin_id'];
+            isOneToOne: false;
+            referencedRelation: 'map_pins';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'messages_call_id_fkey';
+            columns: ['call_id'];
+            isOneToOne: false;
+            referencedRelation: 'calls';
             referencedColumns: ['id'];
           },
         ];
@@ -277,6 +303,67 @@ export type Database = {
           },
         ];
       };
+      map_pins: {
+        Row: {
+          id: number;
+          owner_id: string;
+          kind: PinKind;
+          title: string;
+          note: string | null;
+          latitude: number;
+          longitude: number;
+          meet_at: string | null;
+          created_at: string;
+          expires_at: string;
+        };
+        Insert: Record<string, never>;
+        Update: Record<string, never>;
+        Relationships: [
+          {
+            foreignKeyName: 'map_pins_owner_id_fkey';
+            columns: ['owner_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      pin_shares: {
+        Row: { pin_id: number; viewer_id: string };
+        Insert: Record<string, never>;
+        Update: Record<string, never>;
+        Relationships: [];
+      };
+      calls: {
+        Row: {
+          id: string;
+          caller_id: string;
+          callee_id: string;
+          kind: CallKind;
+          status: CallStatus;
+          created_at: string;
+          answered_at: string | null;
+          ended_at: string | null;
+        };
+        Insert: Record<string, never>;
+        Update: Record<string, never>;
+        Relationships: [
+          {
+            foreignKeyName: 'calls_caller_id_fkey';
+            columns: ['caller_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'calls_callee_id_fkey';
+            columns: ['callee_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
     };
     Views: { [_ in never]: never };
     Functions: {
@@ -308,6 +395,27 @@ export type Database = {
         Args: { owner: string };
         Returns: boolean;
       };
+      drop_pin: {
+        Args: {
+          pin_kind: PinKind;
+          pin_title: string;
+          pin_note: string | null;
+          lat: number;
+          lng: number;
+          meet_time: string | null;
+          expires: string | null;
+          viewer_ids: string[];
+          post_in_chat?: boolean;
+        };
+        Returns: number;
+      };
+      start_call: {
+        Args: { callee: string; call_type: CallKind };
+        Returns: string;
+      };
+      answer_call: { Args: { call: string }; Returns: undefined };
+      decline_call: { Args: { call: string }; Returns: undefined };
+      end_call: { Args: { call: string }; Returns: undefined };
       get_conversations: {
         Args: Record<PropertyKey, never>;
         Returns: {
@@ -324,6 +432,10 @@ export type Database = {
       sport: Sport;
       skill_level: SkillLevel;
       buddy_status: BuddyStatus;
+      message_kind: MessageKind;
+      pin_kind: PinKind;
+      call_kind: CallKind;
+      call_status: CallStatus;
     };
     CompositeTypes: { [_ in never]: never };
   };
@@ -336,5 +448,7 @@ export type BuddyRequest = Tables['buddy_requests']['Row'];
 export type Message = Tables['messages']['Row'];
 export type Trip = Tables['trips']['Row'];
 export type TripMember = Tables['trip_members']['Row'];
+export type MapPin = Tables['map_pins']['Row'];
+export type Call = Tables['calls']['Row'];
 export type LiveLocation = Tables['live_locations']['Row'];
 export type Conversation = Database['public']['Functions']['get_conversations']['Returns'][number];

@@ -46,6 +46,20 @@ const config: ExpoConfig = {
       },
     ],
     [
+      'expo-audio',
+      {
+        microphonePermission: 'Snow Buddies uses the microphone for voice messages and calls with your buddies.',
+      },
+    ],
+    '@livekit/react-native-expo-plugin',
+    [
+      '@config-plugins/react-native-webrtc',
+      {
+        cameraPermission: 'Snow Buddies uses the camera for video calls with your buddies.',
+        microphonePermission: 'Snow Buddies uses the microphone for voice messages and calls with your buddies.',
+      },
+    ],
+    [
       'react-native-maps',
       {
         androidGoogleMapsApiKey: process.env.GOOGLE_MAPS_ANDROID_API_KEY,

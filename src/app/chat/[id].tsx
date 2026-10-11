@@ -1,15 +1,18 @@
-import { Stack, useLocalSearchParams } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
-import { FlatList, KeyboardAvoidingView, Platform, StyleSheet, View } from 'react-native';
-import { HelperText, IconButton, Text, TextInput } from 'react-native-paper';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, StyleSheet, View } from 'react-native';
+import { HelperText, IconButton, TextInput } from 'react-native-paper';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { MessageBubble } from '@/components/chat/MessageBubble';
+import { VoiceRecorder } from '@/components/chat/VoiceRecorder';
 import { EmptyView, ErrorView, LoadingView } from '@/components/StateViews';
 import { fetchMessages, fetchRider, markConversationRead, sendMessage, subscribeToIncomingMessages } from '@/lib/api';
-import type { Rider } from '@/lib/api';
-import type { Message } from '@/lib/database.types';
-import { formatMessageTime } from '@/lib/dates';
+import type { ChatMessage, Rider } from '@/lib/api';
+import { startCall, subscribeToMyCalls } from '@/lib/calls';
+import type { CallKind } from '@/lib/database.types';
 import { friendlyError, supabase } from '@/lib/supabase';
+import { sendVoiceMessage, uploadVoiceNote } from '@/lib/voice';
 import { useCurrentProfile } from '@/providers/AuthProvider';
 import theme from '@/theme';
 
@@ -18,13 +21,14 @@ export default function ChatScreen() {
   const me = useCurrentProfile();
   const insets = useSafeAreaInsets();
   const [rider, setRider] = useState<Rider | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
+  const [recording, setRecording] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
-  const listRef = useRef<FlatList<Message>>(null);
+  const listRef = useRef<FlatList<ChatMessage>>(null);
 
   const [attempt, setAttempt] = useState(0);
 
@@ -50,16 +54,29 @@ export default function ChatScreen() {
     setAttempt((n) => n + 1);
   };
 
+  // Re-fetch quietly, e.g. to pick up call outcomes shown in the thread.
+  const refreshMessages = useCallback(() => {
+    fetchMessages(me.id, otherId)
+      .then(setMessages)
+      .catch(() => {});
+  }, [me.id, otherId]);
+
   useEffect(() => {
-    const channel = subscribeToIncomingMessages(me.id, (message) => {
+    const messagesChannel = subscribeToIncomingMessages(me.id, (message) => {
       if (message.sender_id !== otherId) return;
-      setMessages((prev) => (prev.some((m) => m.id === message.id) ? prev : [...prev, message]));
+      if (message.kind === 'text' || message.kind === 'voice') {
+        setMessages((prev) => (prev.some((m) => m.id === message.id) ? prev : [...prev, message]));
+      } else {
+        refreshMessages();
+      }
       void markConversationRead(otherId).catch(() => {});
     });
+    const callsChannel = subscribeToMyCalls(() => refreshMessages());
     return () => {
-      void supabase.removeChannel(channel);
+      void supabase.removeChannel(messagesChannel);
+      void supabase.removeChannel(callsChannel);
     };
-  }, [me.id, otherId]);
+  }, [me.id, otherId, refreshMessages]);
 
   const send = async () => {
     const body = draft.trim();
@@ -77,6 +94,31 @@ export default function ChatScreen() {
     }
   };
 
+  const sendVoice = async (uri: string, durationMs: number) => {
+    setSending(true);
+    setSendError(null);
+    try {
+      const path = await uploadVoiceNote(uri, me.id);
+      const message = await sendVoiceMessage(otherId, path, durationMs);
+      setMessages((prev) => [...prev, message]);
+    } catch (e) {
+      setSendError(friendlyError(e));
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const call = async (kind: CallKind) => {
+    setSendError(null);
+    try {
+      const callId = await startCall(otherId, kind);
+      refreshMessages();
+      router.push(`/call/${callId}`);
+    } catch (e) {
+      setSendError(friendlyError(e));
+    }
+  };
+
   if (loading) return <LoadingView />;
   if (error) return <ErrorView message={error} onRetry={retry} />;
 
@@ -86,7 +128,17 @@ export default function ChatScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
     >
-      <Stack.Screen options={{ title: rider?.display_name ?? 'Chat' }} />
+      <Stack.Screen
+        options={{
+          title: rider?.display_name ?? 'Chat',
+          headerRight: () => (
+            <View style={styles.headerActions}>
+              <IconButton icon="phone" onPress={() => void call('voice')} accessibilityLabel="Voice call" />
+              <IconButton icon="video" onPress={() => void call('video')} accessibilityLabel="Video call" />
+            </View>
+          ),
+        }}
+      />
       <FlatList
         ref={listRef}
         data={messages}
@@ -96,39 +148,35 @@ export default function ChatScreen() {
         ListEmptyComponent={
           <EmptyView icon="message-text-outline" title="No messages yet" body="Plan your next powder day!" />
         }
-        renderItem={({ item }) => {
-          const mine = item.sender_id === me.id;
-          return (
-            <View style={[styles.bubble, mine ? styles.mine : styles.theirs]}>
-              <Text style={mine ? styles.mineText : undefined}>{item.body}</Text>
-              <Text variant="labelSmall" style={[styles.time, mine && styles.mineText]}>
-                {formatMessageTime(item.created_at)}
-              </Text>
-            </View>
-          );
-        }}
+        renderItem={({ item }) => <MessageBubble message={item} mine={item.sender_id === me.id} />}
       />
       <HelperText type="error" visible={!!sendError} style={styles.sendError}>
         {sendError}
       </HelperText>
       <View style={[styles.composer, { paddingBottom: Math.max(insets.bottom, 8) }]}>
-        <TextInput
-          mode="outlined"
-          placeholder="Message"
-          value={draft}
-          onChangeText={setDraft}
-          multiline
-          maxLength={2000}
-          style={styles.input}
-          dense
-        />
-        <IconButton
-          icon="send"
-          mode="contained"
-          onPress={send}
-          disabled={!draft.trim() || sending}
-          accessibilityLabel="Send message"
-        />
+        {!recording && (
+          <TextInput
+            mode="outlined"
+            placeholder="Message"
+            value={draft}
+            onChangeText={setDraft}
+            multiline
+            maxLength={2000}
+            style={styles.input}
+            dense
+          />
+        )}
+        {sending ? (
+          <ActivityIndicator style={styles.spinner} color={theme.colors.primary} />
+        ) : draft.trim() ? (
+          <IconButton icon="send" mode="contained" onPress={send} accessibilityLabel="Send message" />
+        ) : (
+          <VoiceRecorder
+            onRecorded={(uri, ms) => void sendVoice(uri, ms)}
+            onError={setSendError}
+            onRecordingChange={setRecording}
+          />
+        )}
       </View>
     </KeyboardAvoidingView>
   );
@@ -137,11 +185,7 @@ export default function ChatScreen() {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   list: { padding: 12, gap: 6, flexGrow: 1 },
-  bubble: { maxWidth: '80%', borderRadius: 16, paddingHorizontal: 12, paddingVertical: 8 },
-  mine: { alignSelf: 'flex-end', backgroundColor: theme.colors.primary },
-  theirs: { alignSelf: 'flex-start', backgroundColor: theme.colors.surfaceVariant },
-  mineText: { color: '#FFFFFF' },
-  time: { opacity: 0.7, marginTop: 2, alignSelf: 'flex-end' },
+  headerActions: { flexDirection: 'row' },
   sendError: { paddingHorizontal: 12 },
   composer: {
     flexDirection: 'row',
@@ -151,4 +195,5 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.surface,
   },
   input: { flex: 1, maxHeight: 120 },
+  spinner: { margin: 14 },
 });
