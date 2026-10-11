@@ -3,11 +3,21 @@ import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { CircleMarker, MapContainer, Marker, Polyline, Popup, TileLayer, Tooltip } from 'react-leaflet';
+import {
+  CircleMarker,
+  MapContainer,
+  Marker,
+  Polyline,
+  Popup,
+  TileLayer,
+  Tooltip,
+  useMapEvents,
+} from 'react-leaflet';
 import { FAB } from 'react-native-paper';
 
 import { initials } from '@/lib/labels';
 import { formatLastSeen } from '@/lib/locationSharing';
+import { formatMeetTime } from '@/lib/pins';
 import type { LatLng } from '@/lib/openskimap';
 import { LIFT_COLOR, runColor } from '@/lib/openskimap';
 
@@ -38,8 +48,31 @@ function friendIcon(name: string): L.DivIcon {
   });
 }
 
+const pinIcons = {
+  meetup: L.divIcon({ className: '', iconSize: [32, 32], iconAnchor: [6, 30], html: '<div style="font-size:28px">🚩</div>' }),
+  pin: L.divIcon({ className: '', iconSize: [32, 32], iconAnchor: [16, 30], html: '<div style="font-size:28px">📍</div>' }),
+};
+
+/** Right-click / long-press (Leaflet "contextmenu") drops a pin. */
+function DropPinOnLongPress({ onDropPin }: { onDropPin: (at: LatLng) => void }) {
+  useMapEvents({
+    contextmenu: (e) => onDropPin({ latitude: e.latlng.lat, longitude: e.latlng.lng }),
+  });
+  return null;
+}
+
 /** Web map (Leaflet + OpenStreetMap tiles) with the same overlays as native. */
-export function SkiMap({ center, title, data, userLocation, friends, onFriendPress }: SkiMapProps) {
+export function SkiMap({
+  center,
+  title,
+  data,
+  userLocation,
+  friends,
+  onFriendPress,
+  pins,
+  onPinPress,
+  onDropPin,
+}: SkiMapProps) {
   const [map, setMap] = useState<L.Map | null>(null);
   const icons = useMemo(() => new Map(friends.map((f) => [f.userId, friendIcon(f.name)])), [friends]);
 
@@ -74,6 +107,7 @@ export function SkiMap({ center, title, data, userLocation, friends, onFriendPre
           zoomControl={false}
         >
           <TileLayer url={TILE_URL} attribution={ATTRIBUTION} maxZoom={19} />
+          <DropPinOnLongPress onDropPin={onDropPin} />
           {data?.runs.flatMap((run) =>
             run.lines.map((line, i) => (
               <Polyline
@@ -112,6 +146,19 @@ export function SkiMap({ center, title, data, userLocation, friends, onFriendPre
               <Tooltip>You</Tooltip>
             </CircleMarker>
           )}
+          {pins.map((pin) => (
+            <Marker
+              key={`pin-${pin.id}`}
+              position={[pin.latitude, pin.longitude]}
+              icon={pinIcons[pin.kind]}
+              eventHandlers={{ click: () => onPinPress(pin) }}
+            >
+              <Tooltip direction="top" offset={[0, -24]}>
+                {pin.title}
+                {pin.kind === 'meetup' && pin.meet_at ? ` · ${formatMeetTime(pin.meet_at)}` : ''}
+              </Tooltip>
+            </Marker>
+          ))}
           {friends.map((friend) => (
             <Marker
               key={friend.userId}
@@ -138,6 +185,15 @@ export function SkiMap({ center, title, data, userLocation, friends, onFriendPre
         </MapContainer>
       </View>
       <View style={styles.fabs}>
+        <FAB
+          small
+          icon="map-marker-plus"
+          accessibilityLabel="Drop a pin"
+          onPress={() => {
+            const c = map?.getCenter();
+            onDropPin(userLocation ?? (c ? { latitude: c.lat, longitude: c.lng } : center));
+          }}
+        />
         {friends.length > 0 && (
           <FAB small icon="account-group" accessibilityLabel="Show my buddies" onPress={showEveryone} />
         )}

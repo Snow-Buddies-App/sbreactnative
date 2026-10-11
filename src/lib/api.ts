@@ -2,6 +2,7 @@ import type { RealtimeChannel } from '@supabase/supabase-js';
 
 import type {
   BuddyRequest,
+  Call,
   Conversation,
   Message,
   Mountain,
@@ -124,17 +125,21 @@ export async function fetchConversations(): Promise<Conversation[]> {
   return data ?? [];
 }
 
-export async function fetchMessages(myId: string, otherId: string, limit = 200): Promise<Message[]> {
+export type ChatMessage = Message & {
+  call?: Pick<Call, 'kind' | 'status' | 'answered_at' | 'ended_at'> | null;
+};
+
+export async function fetchMessages(myId: string, otherId: string, limit = 200): Promise<ChatMessage[]> {
   const { data, error } = await supabase
     .from('messages')
-    .select('*')
+    .select('*, call:calls(kind, status, answered_at, ended_at)')
     .or(
       `and(sender_id.eq.${myId},recipient_id.eq.${otherId}),and(sender_id.eq.${otherId},recipient_id.eq.${myId})`,
     )
     .order('created_at', { ascending: false })
     .limit(limit);
   if (error) throw error;
-  return data.reverse();
+  return (data as unknown as ChatMessage[]).reverse();
 }
 
 export async function sendMessage(recipientId: string, body: string): Promise<Message> {

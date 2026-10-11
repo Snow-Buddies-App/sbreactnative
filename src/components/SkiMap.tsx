@@ -5,6 +5,7 @@ import { FAB } from 'react-native-paper';
 
 import { RiderAvatar } from '@/components/RiderAvatar';
 import { formatLastSeen } from '@/lib/locationSharing';
+import { formatMeetTime } from '@/lib/pins';
 import type { LatLng } from '@/lib/openskimap';
 import { LIFT_COLOR, runColor } from '@/lib/openskimap';
 
@@ -16,7 +17,17 @@ const DELTA = { latitudeDelta: 0.06, longitudeDelta: 0.06 };
 const EDGE_PADDING = { top: 140, right: 60, bottom: 160, left: 60 };
 
 /** Native map: OpenSkiMap runs and lifts, my GPS dot, and buddies sharing with me. */
-export function SkiMap({ center, title, data, userLocation, friends, onFriendPress }: SkiMapProps) {
+export function SkiMap({
+  center,
+  title,
+  data,
+  userLocation,
+  friends,
+  onFriendPress,
+  pins,
+  onPinPress,
+  onDropPin,
+}: SkiMapProps) {
   const mapRef = useRef<MapView>(null);
 
   const goTo = (point: LatLng, delta = DELTA) => mapRef.current?.animateToRegion({ ...point, ...delta }, 600);
@@ -28,10 +39,17 @@ export function SkiMap({ center, title, data, userLocation, friends, onFriendPre
     else mapRef.current?.fitToCoordinates(points, { edgePadding: EDGE_PADDING, animated: true });
   };
 
+  const dropPinHere = async () => {
+    if (userLocation) return onDropPin(userLocation);
+    const camera = await mapRef.current?.getCamera();
+    onDropPin(camera?.center ?? center);
+  };
+
   return (
     <View style={styles.flex}>
       <MapView
         ref={mapRef}
+        onLongPress={(e) => onDropPin(e.nativeEvent.coordinate)}
         style={styles.flex}
         initialRegion={{ ...center, ...DELTA }}
         mapType="terrain"
@@ -65,6 +83,18 @@ export function SkiMap({ center, title, data, userLocation, friends, onFriendPre
             />
           )),
         )}
+        {pins.map((pin) => (
+          <Marker
+            key={`pin-${pin.id}`}
+            coordinate={{ latitude: pin.latitude, longitude: pin.longitude }}
+            pinColor={pin.kind === 'meetup' ? 'green' : 'orange'}
+            title={pin.title}
+            description={
+              pin.kind === 'meetup' && pin.meet_at ? `Meet at ${formatMeetTime(pin.meet_at)}` : pin.note ?? undefined
+            }
+            onPress={() => onPinPress(pin)}
+          />
+        ))}
         {friends.map((friend) => (
           <Marker
             key={friend.userId}
@@ -87,6 +117,7 @@ export function SkiMap({ center, title, data, userLocation, friends, onFriendPre
         ))}
       </MapView>
       <View style={styles.fabs}>
+        <FAB small icon="map-marker-plus" accessibilityLabel="Drop a pin" onPress={dropPinHere} />
         {friends.length > 0 && (
           <FAB small icon="account-group" accessibilityLabel="Show my buddies" onPress={showEveryone} />
         )}

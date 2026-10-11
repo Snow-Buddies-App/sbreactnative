@@ -3,13 +3,17 @@ import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { ActivityIndicator, Chip, Surface, Text } from 'react-native-paper';
 
+import { DropPinSheet } from '@/components/DropPinSheet';
 import { LocationSharingSheet } from '@/components/LocationSharingSheet';
+import { PinDetailsSheet } from '@/components/PinDetailsSheet';
 import { SkiMap } from '@/components/SkiMap';
 import { useFriendLocations } from '@/hooks/useFriendLocations';
+import { usePins } from '@/hooks/usePins';
 import { useUserLocation } from '@/hooks/useUserLocation';
 import { formatUntil } from '@/lib/locationSharing';
 import type { LatLng, SkiMapData } from '@/lib/openskimap';
 import { distanceKm, fetchSkiMap, LIFT_COLOR, RUN_COLORS } from '@/lib/openskimap';
+import type { PinWithOwner } from '@/lib/pins';
 import { useCurrentProfile } from '@/providers/AuthProvider';
 import { useLocationSharing } from '@/providers/LocationSharingProvider';
 
@@ -27,8 +31,15 @@ function formatDistance(km: number): string {
   return `${Math.round(km).toLocaleString()} km`;
 }
 
-/** A resort's trail map (runs + lifts from OpenSkiMap) with me and buddies sharing with me. */
-export function ResortMap({ name, center }: { name: string; center: LatLng }) {
+type Props = {
+  name: string;
+  center: LatLng;
+  /** Open this pin's details once pins have loaded (e.g. from a chat card). */
+  focusPinId?: number;
+};
+
+/** A resort's trail map (runs + lifts from OpenSkiMap) with me, buddies and shared pins. */
+export function ResortMap({ name, center, focusPinId }: Props) {
   // The trail map result, tagged with the centre it was loaded for.
   const [result, setResult] = useState<{ center: LatLng; data?: SkiMapData; error?: string } | null>(null);
   const { location, status } = useUserLocation();
@@ -36,6 +47,10 @@ export function ResortMap({ name, center }: { name: string; center: LatLng }) {
   const { friends } = useFriendLocations(me.id);
   const { sharingUntil } = useLocationSharing();
   const [sheetOpen, setSheetOpen] = useState(false);
+  const { pins, reload: reloadPins } = usePins();
+  const [dropAt, setDropAt] = useState<LatLng | null>(null);
+  const [selectedPinId, setSelectedPinId] = useState<number | null>(focusPinId ?? null);
+  const selectedPin: PinWithOwner | null = pins.find((p) => p.id === selectedPinId) ?? null;
 
   useEffect(() => {
     const controller = new AbortController();
@@ -65,6 +80,9 @@ export function ResortMap({ name, center }: { name: string; center: LatLng }) {
         userLocation={location}
         friends={friends}
         onFriendPress={(id) => router.push(`/chat/${id}`)}
+        pins={pins}
+        onPinPress={(pin) => setSelectedPinId(pin.id)}
+        onDropPin={setDropAt}
       />
 
       <Surface style={styles.infoCard} elevation={2}>
@@ -107,6 +125,24 @@ export function ResortMap({ name, center }: { name: string; center: LatLng }) {
         </View>
       </Surface>
       <LocationSharingSheet visible={sheetOpen} onDismiss={() => setSheetOpen(false)} />
+      <DropPinSheet
+        position={dropAt}
+        onDismiss={() => setDropAt(null)}
+        onDropped={(id) => {
+          setDropAt(null);
+          reloadPins();
+          setSelectedPinId(id);
+        }}
+      />
+      <PinDetailsSheet
+        pin={selectedPin}
+        userLocation={location}
+        onDismiss={() => setSelectedPinId(null)}
+        onDeleted={() => {
+          setSelectedPinId(null);
+          reloadPins();
+        }}
+      />
 
       <View style={styles.legend} pointerEvents="none">
         {LEGEND.map((item) => (
