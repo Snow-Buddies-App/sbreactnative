@@ -16,9 +16,12 @@ for migration in migrations/*.sql; do
   psql "$DB_URL" -v ON_ERROR_STOP=1 -q -f "$migration"
 done
 psql "$DB_URL" -v ON_ERROR_STOP=1 -q -f seed.sql
-output="$(psql "$DB_URL" -v ON_ERROR_STOP=1 -q -f tests/rls_test.sql)"
-if ! grep -q 'ALL RLS TESTS PASSED' <<<"$output"; then
-  echo "$output"
-  exit 1
-fi
+for test in tests/*_test.sql; do
+  output="$(psql "$DB_URL" -v ON_ERROR_STOP=1 -q -f "$test" 2>&1)" || { echo "$output"; exit 1; }
+  if ! grep -q 'TESTS PASSED' <<<"$output"; then
+    echo "$output"
+    exit 1
+  fi
+  echo "✓ $test"
+done
 echo "Database tests passed"

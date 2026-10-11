@@ -1,26 +1,32 @@
 import { useRef } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import { FAB } from 'react-native-paper';
 
-import type { LatLng, SkiMapData } from '@/lib/openskimap';
+import { RiderAvatar } from '@/components/RiderAvatar';
+import { formatLastSeen } from '@/lib/locationSharing';
+import type { LatLng } from '@/lib/openskimap';
 import { LIFT_COLOR, runColor } from '@/lib/openskimap';
 
-export type SkiMapProps = {
-  center: LatLng;
-  title: string;
-  data: SkiMapData | null;
-  userLocation: LatLng | null;
-};
+import type { SkiMapProps } from './SkiMap.types';
+
+export type { SkiMapProps };
 
 const DELTA = { latitudeDelta: 0.06, longitudeDelta: 0.06 };
+const EDGE_PADDING = { top: 140, right: 60, bottom: 160, left: 60 };
 
-/** Native map with OpenSkiMap runs and lifts drawn over terrain. */
-export function SkiMap({ center, title, data, userLocation }: SkiMapProps) {
+/** Native map: OpenSkiMap runs and lifts, my GPS dot, and buddies sharing with me. */
+export function SkiMap({ center, title, data, userLocation, friends, onFriendPress }: SkiMapProps) {
   const mapRef = useRef<MapView>(null);
 
-  const goTo = (point: LatLng, delta = DELTA) =>
-    mapRef.current?.animateToRegion({ ...point, ...delta }, 600);
+  const goTo = (point: LatLng, delta = DELTA) => mapRef.current?.animateToRegion({ ...point, ...delta }, 600);
+
+  const showEveryone = () => {
+    const points: LatLng[] = friends.map((f) => ({ latitude: f.latitude, longitude: f.longitude }));
+    if (userLocation) points.push(userLocation);
+    if (points.length === 1) goTo(points[0], { latitudeDelta: 0.02, longitudeDelta: 0.02 });
+    else mapRef.current?.fitToCoordinates(points, { edgePadding: EDGE_PADDING, animated: true });
+  };
 
   return (
     <View style={styles.flex}>
@@ -32,7 +38,6 @@ export function SkiMap({ center, title, data, userLocation }: SkiMapProps) {
         showsUserLocation
         showsCompass
         showsScale
-        rotateEnabled
         pitchEnabled={false}
         toolbarEnabled={false}
       >
@@ -60,8 +65,31 @@ export function SkiMap({ center, title, data, userLocation }: SkiMapProps) {
             />
           )),
         )}
+        {friends.map((friend) => (
+          <Marker
+            key={friend.userId}
+            coordinate={{ latitude: friend.latitude, longitude: friend.longitude }}
+            title={friend.name}
+            description={`Updated ${formatLastSeen(friend.updatedAt)} · Tap to message`}
+            onCalloutPress={() => onFriendPress(friend.userId)}
+            anchor={{ x: 0.5, y: 0.5 }}
+            tracksViewChanges={false}
+          >
+            <View style={styles.friendMarker}>
+              <View style={styles.friendRing}>
+                <RiderAvatar id={friend.userId} name={friend.name} size={34} />
+              </View>
+              <Text style={styles.friendName} numberOfLines={1}>
+                {friend.name}
+              </Text>
+            </View>
+          </Marker>
+        ))}
       </MapView>
       <View style={styles.fabs}>
+        {friends.length > 0 && (
+          <FAB small icon="account-group" accessibilityLabel="Show my buddies" onPress={showEveryone} />
+        )}
         <FAB small icon="image-filter-hdr" accessibilityLabel="Center on resort" onPress={() => goTo(center)} />
         {userLocation && (
           <FAB
@@ -79,4 +107,16 @@ export function SkiMap({ center, title, data, userLocation }: SkiMapProps) {
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   fabs: { position: 'absolute', right: 12, bottom: 12, gap: 10 },
+  friendMarker: { alignItems: 'center', width: 90 },
+  friendRing: { borderRadius: 22, borderWidth: 3, borderColor: '#FFFFFF', backgroundColor: '#FFFFFF' },
+  friendName: {
+    marginTop: 2,
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#04448C',
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    paddingHorizontal: 4,
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
 });

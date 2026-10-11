@@ -18,7 +18,8 @@ Built with **Expo SDK 57** (React Native 0.86, Expo Router), **React Native Pape
 | Buddies | Send, accept, decline and cancel buddy requests; remove buddies. |
 | Chat | Realtime 1:1 messages between buddies with unread counts. |
 | Trips | Plan a ride day at a mountain with a rider cap and optional minimum level; join or leave. |
-| Ski map | Runs coloured by difficulty and lifts for any resort worldwide, your live location, and distance to the resort. |
+| Ski map | Embedded map (native maps on iOS and Android, Leaflet on web) with runs coloured by difficulty and lifts for any resort worldwide, your live GPS position, and distance to the resort. |
+| Friends on the map | Share your live location for 1, 4 or 8 hours and choose exactly which buddies can see you. Buddies sharing with you appear on the map in real time. Tap one to message them. |
 
 ## Project layout
 
@@ -56,7 +57,8 @@ cp .env.example .env.local
 2. Apply the schema and seed data, either:
    - **Supabase CLI:** `npx supabase link --project-ref <ref>` then `npx supabase db push`
      and run `supabase/seed.sql` in the SQL editor, **or**
-   - **Dashboard:** paste `supabase/migrations/*.sql`, then `supabase/seed.sql`, into the SQL editor.
+   - **Dashboard:** paste each file in `supabase/migrations/` (in filename order), then
+     `supabase/seed.sql`, into the SQL editor.
 3. In **Project Settings → API**, copy the project URL and the `anon` public key into
    `.env.local` as `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY`.
 4. In **Authentication → URL Configuration → Redirect URLs**, add:
@@ -85,9 +87,14 @@ npm start          # then press i (iOS), a (Android) or w (web)
 ```
 
 `react-native-maps` and `expo-location` are included in Expo Go, so the full app runs there.
+In Expo Go, location sharing works while the app is open. **Keep sharing when the app is
+closed** (background location) needs a development or store build
+(`npx eas-cli build --profile development`), and the toggle appears automatically there.
 For store builds, use EAS (`npx eas-cli build`). Android release builds need a Google Maps
 API key in `GOOGLE_MAPS_ANDROID_API_KEY`. iOS uses Apple Maps and needs no key. On web
-the ski map links out to openskimap.org, because react-native-maps is native-only.
+the map is rendered with Leaflet and OpenStreetMap tiles. Set `EXPO_PUBLIC_WEB_TILE_URL` to a
+commercial tile provider (MapTiler, Stadia…) before heavy traffic, since the public OSM tile
+servers are for light use only.
 
 ## Ski map data
 
@@ -109,6 +116,11 @@ Every table has row level security, and the app only ever uses the anon key.
 - Buddy requests are visible only to the two people involved. Only the recipient can
   accept, via `accept_buddy_request()`.
 - Messages can be sent only between accepted buddies and read only by the sender and the recipient.
+- Location sharing is off by default and always time-limited (12 hours max). Each rider
+  chooses which buddies can see them. Only the latest position is stored, never a history,
+  and it is deleted when sharing stops. Positions can only be written through
+  `update_my_location()`, which refuses to store anything while sharing is off. Unfriending
+  removes location access in both directions.
 - Trip capacity and dates are enforced in the database. The trip row is locked while
   someone joins, so the trip can't be overbooked.
 
@@ -122,5 +134,5 @@ DATABASE_URL=postgres://postgres:postgres@localhost:5432/postgres npm run test:d
 ```
 
 `test:db` applies the migrations to a temporary Postgres database, using a small
-Supabase auth stub, and runs `supabase/tests/rls_test.sql`. CI (`.github/workflows/ci.yml`)
+Supabase auth stub, and runs every `supabase/tests/*_test.sql` (RLS and location privacy). CI (`.github/workflows/ci.yml`)
 runs all of these checks on every pull request.

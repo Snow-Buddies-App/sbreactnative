@@ -8,6 +8,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ConfigMissingScreen, ProfileErrorScreen } from '@/components/AppStatusScreens';
 import { isSupabaseConfigured } from '@/lib/supabase';
 import { AuthProvider, useAuth } from '@/providers/AuthProvider';
+// Also registers the background location task at startup.
+import { LocationSharingProvider } from '@/providers/LocationSharingProvider';
 import theme from '@/theme';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -42,7 +44,7 @@ function RootNavigator() {
   const signedIn = !!session;
   const onboarded = !!profile?.onboarded;
 
-  return (
+  const stack = (
     <Stack
       screenOptions={{
         headerTintColor: theme.colors.primary,
@@ -76,4 +78,6 @@ function RootNavigator() {
       </Stack.Protected>
     </Stack>
   );
+
+  return session ? <LocationSharingProvider userId={session.user.id}>{stack}</LocationSharingProvider> : stack;
 }

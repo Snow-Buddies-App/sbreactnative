@@ -218,6 +218,65 @@ export type Database = {
           },
         ];
       };
+      location_sharing: {
+        Row: {
+          user_id: string;
+          sharing_until: string | null;
+          updated_at: string;
+        };
+        Insert: Record<string, never>;
+        Update: Record<string, never>;
+        Relationships: [];
+      };
+      location_shares: {
+        Row: {
+          owner_id: string;
+          viewer_id: string;
+          created_at: string;
+        };
+        Insert: {
+          owner_id?: string;
+          viewer_id: string;
+        };
+        Update: Record<string, never>;
+        Relationships: [
+          {
+            foreignKeyName: 'location_shares_owner_id_fkey';
+            columns: ['owner_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'location_shares_viewer_id_fkey';
+            columns: ['viewer_id'];
+            isOneToOne: false;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      live_locations: {
+        Row: {
+          user_id: string;
+          latitude: number;
+          longitude: number;
+          accuracy_m: number | null;
+          heading: number | null;
+          updated_at: string;
+        };
+        Insert: Record<string, never>;
+        Update: Record<string, never>;
+        Relationships: [
+          {
+            foreignKeyName: 'live_locations_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: true;
+            referencedRelation: 'profiles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
     };
     Views: { [_ in never]: never };
     Functions: {
@@ -232,6 +291,22 @@ export type Database = {
       mark_conversation_read: {
         Args: { other_id: string };
         Returns: undefined;
+      };
+      start_location_sharing: {
+        Args: { duration_minutes: number };
+        Returns: string;
+      };
+      stop_location_sharing: {
+        Args: Record<PropertyKey, never>;
+        Returns: undefined;
+      };
+      update_my_location: {
+        Args: { lat: number; lng: number; accuracy?: number | null; heading_deg?: number | null };
+        Returns: boolean;
+      };
+      can_see_location: {
+        Args: { owner: string };
+        Returns: boolean;
       };
       get_conversations: {
         Args: Record<PropertyKey, never>;
@@ -261,4 +336,5 @@ export type BuddyRequest = Tables['buddy_requests']['Row'];
 export type Message = Tables['messages']['Row'];
 export type Trip = Tables['trips']['Row'];
 export type TripMember = Tables['trip_members']['Row'];
+export type LiveLocation = Tables['live_locations']['Row'];
 export type Conversation = Database['public']['Functions']['get_conversations']['Returns'][number];

@@ -37,7 +37,12 @@ const config: ExpoConfig = {
       'expo-location',
       {
         locationWhenInUsePermission:
-          'Snow Buddies uses your location to show where you are on the ski map.',
+          'Snow Buddies shows where you are on the ski map and, when you choose, shares it with the buddies you pick.',
+        locationAlwaysAndWhenInUsePermission:
+          'Allow "Always" to keep sharing your location with your chosen buddies while your phone is in your pocket. Sharing always turns off automatically.',
+        isIosBackgroundLocationEnabled: true,
+        isAndroidBackgroundLocationEnabled: true,
+        isAndroidForegroundServiceEnabled: true,
       },
     ],
     [

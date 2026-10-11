@@ -1,11 +1,17 @@
+import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { ActivityIndicator, Chip, Surface, Text } from 'react-native-paper';
 
+import { LocationSharingSheet } from '@/components/LocationSharingSheet';
 import { SkiMap } from '@/components/SkiMap';
+import { useFriendLocations } from '@/hooks/useFriendLocations';
 import { useUserLocation } from '@/hooks/useUserLocation';
+import { formatUntil } from '@/lib/locationSharing';
 import type { LatLng, SkiMapData } from '@/lib/openskimap';
 import { distanceKm, fetchSkiMap, LIFT_COLOR, RUN_COLORS } from '@/lib/openskimap';
+import { useCurrentProfile } from '@/providers/AuthProvider';
+import { useLocationSharing } from '@/providers/LocationSharingProvider';
 
 const LEGEND = [
   { label: 'Easy', color: RUN_COLORS.easy },
@@ -21,11 +27,15 @@ function formatDistance(km: number): string {
   return `${Math.round(km).toLocaleString()} km`;
 }
 
-/** A resort's trail map (runs + lifts from OpenSkiMap) with the rider's location. */
+/** A resort's trail map (runs + lifts from OpenSkiMap) with me and buddies sharing with me. */
 export function ResortMap({ name, center }: { name: string; center: LatLng }) {
   // The trail map result, tagged with the centre it was loaded for.
   const [result, setResult] = useState<{ center: LatLng; data?: SkiMapData; error?: string } | null>(null);
   const { location, status } = useUserLocation();
+  const me = useCurrentProfile();
+  const { friends } = useFriendLocations(me.id);
+  const { sharingUntil } = useLocationSharing();
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -48,7 +58,14 @@ export function ResortMap({ name, center }: { name: string; center: LatLng }) {
 
   return (
     <View style={styles.flex}>
-      <SkiMap center={center} title={name} data={data} userLocation={location} />
+      <SkiMap
+        center={center}
+        title={name}
+        data={data}
+        userLocation={location}
+        friends={friends}
+        onFriendPress={(id) => router.push(`/chat/${id}`)}
+      />
 
       <Surface style={styles.infoCard} elevation={2}>
         <Text variant="titleSmall">{name}</Text>
@@ -74,7 +91,22 @@ export function ResortMap({ name, center }: { name: string; center: LatLng }) {
             {data.runs.length} runs · {data.lifts.length} lifts
           </Text>
         )}
+        <View style={styles.sharingRow}>
+          <Chip
+            compact
+            icon={sharingUntil ? 'map-marker-account' : 'map-marker-off'}
+            selected={!!sharingUntil}
+            showSelectedOverlay
+            onPress={() => setSheetOpen(true)}
+          >
+            {sharingUntil ? `Sharing until ${formatUntil(sharingUntil)}` : 'Share my location'}
+          </Chip>
+          <Chip compact icon="account-group">
+            {friends.length === 1 ? '1 buddy on map' : `${friends.length} buddies on map`}
+          </Chip>
+        </View>
       </Surface>
+      <LocationSharingSheet visible={sheetOpen} onDismiss={() => setSheetOpen(false)} />
 
       <View style={styles.legend} pointerEvents="none">
         {LEGEND.map((item) => (
@@ -99,7 +131,9 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 12,
     gap: 2,
+    zIndex: 1100,
   },
+  sharingRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6 },
   muted: { opacity: 0.75 },
   spinner: { alignSelf: 'flex-start', marginTop: 4 },
   error: { color: '#C62828' },
@@ -109,6 +143,7 @@ const styles = StyleSheet.create({
     bottom: 12,
     gap: 4,
     alignItems: 'flex-start',
+    zIndex: 1100,
   },
   legendChip: { backgroundColor: 'rgba(255,255,255,0.92)' },
   legendText: { fontSize: 11 },
